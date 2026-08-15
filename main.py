@@ -149,9 +149,10 @@ async def signaling_socket(websocket: WebSocket):
                 await websocket.send_text(json.dumps({"type": "joined", "room": room_code}))
 
                 if room.phone_ws is not None and room.browser_ws is not None:
-                    # Room is full, tell both peers to start
+                    # Room is full — only notify the phone (offerer) to start.
+                    # The browser (answerer) will receive the offer when the phone sends it;
+                    # it does NOT need a peer-joined signal.
                     await room.phone_ws.send_text(json.dumps({"type": "peer-joined"}))
-                    await room.browser_ws.send_text(json.dumps({"type": "peer-joined"}))
 
                 continue
 
