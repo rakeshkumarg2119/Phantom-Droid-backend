@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="../phantom_droid.png" alt="Phantom Droid Logo" width="300" />
+  <img src="phantom_droid.png" alt="Phantom Droid Logo" width="500" height="500"/>
 </p>
 
 <h1 align="center">Phantom Droid - Signaling Server</h1>
