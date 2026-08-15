@@ -5,7 +5,7 @@
 <h1 align="center">Phantom Droid - Signaling Server</h1>
 
 <p align="center">
-  <a href="../build/app/outputs/flutter-apk/app-debug.apk">
+  <a href="../build/app/outputs/flutter-apk/phantom-droid.apk">
     <img src="https://img.shields.io/badge/Download_App_APK-2ea44f?style=for-the-badge&logo=android" alt="Download APK" />
   </a>
 </p>
