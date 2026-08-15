@@ -148,14 +148,10 @@ async def signaling_socket(websocket: WebSocket):
 
                 await websocket.send_text(json.dumps({"type": "joined", "room": room_code}))
 
-                # Tell the OTHER peer (if already connected) that this one just
-                # joined. This is what the phone waits on before calling
-                # webrtc_service.start() / creating its offer — without it,
-                # the offer can fire before the browser is listening and gets
-                # silently dropped below (peer is None -> no relay).
-                other = room.browser_ws if role == "phone" else room.phone_ws
-                if other is not None and other is not websocket:
-                    await other.send_text(json.dumps({"type": "peer-joined"}))
+                if room.phone_ws is not None and room.browser_ws is not None:
+                    # Room is full, tell both peers to start
+                    await room.phone_ws.send_text(json.dumps({"type": "peer-joined"}))
+                    await room.browser_ws.send_text(json.dumps({"type": "peer-joined"}))
 
                 continue
 
@@ -183,5 +179,5 @@ async def signaling_socket(websocket: WebSocket):
                 except Exception:
                     pass
 
-            if room.phone_ws is None and room.browser_ws is None:
-                rooms.pop(room.code, None)
+            # Do not delete the room immediately on disconnect.
+            # cleanup_stale_rooms() handles TTL expiration.
