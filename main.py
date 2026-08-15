@@ -1,5 +1,5 @@
 """
-Mirror Link - WebRTC Signaling Server (v2 - matches client protocol)
+Mirror Link - WebRTC Signaling Server (v3 - peer-joined race fix)
 
 Single WS endpoint. Client sends a "join" message first with room + role.
 role: "phone" (host, screen stays on) or "browser" (viewer).
@@ -8,6 +8,7 @@ Message protocol (relayed verbatim between the two peers in a room):
   client -> server: {"type": "join", "room": "ABC123", "role": "phone"}
   server -> client: {"type": "joined", "room": "ABC123"}
   server -> client: {"type": "error", "message": "..."}
+  server -> other client (if already present): {"type": "peer-joined"}
   phone  -> server -> browser: {"type": "offer", "sdp": {...}}
   browser -> server -> phone : {"type": "answer", "sdp": {...}}
   either -> server -> other  : {"type": "ice-candidate", "candidate": {...}}
@@ -146,9 +147,19 @@ async def signaling_socket(websocket: WebSocket):
                     room.browser_ws = websocket
 
                 await websocket.send_text(json.dumps({"type": "joined", "room": room_code}))
+
+                # Tell the OTHER peer (if already connected) that this one just
+                # joined. This is what the phone waits on before calling
+                # webrtc_service.start() / creating its offer — without it,
+                # the offer can fire before the browser is listening and gets
+                # silently dropped below (peer is None -> no relay).
+                other = room.browser_ws if role == "phone" else room.phone_ws
+                if other is not None and other is not websocket:
+                    await other.send_text(json.dumps({"type": "peer-joined"}))
+
                 continue
 
-            # everything else (offer, answer, ice-candidate, resolution) just relays
+            # everything else (offer, answer, ice-candidate) just relays
             if room is None or role is None:
                 continue
 
